@@ -1,3 +1,4 @@
+
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
@@ -14,6 +15,7 @@ spec:
       protocol: HTTP
     hosts:
     - "*"
+
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -30,8 +32,8 @@ spec:
     - name: primary
       route:
         - destination:
-            host: demo
+            host: istio-demo
           weight: 100
         - destination:
-            host: demo-canary
+            host: istio-demo-canary
           weight: 0
