@@ -2,9 +2,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: demo
+  name: istio-demo
   labels:
-    app: demo
+    app: istio-demo
 spec:
   strategy:
     canary:
@@ -14,7 +14,7 @@ spec:
         startingStep: 2
         args:
         - name: service-name
-          value: demo-canary.default.svc.cluster.local
+          value: istio-demo-canary.demo.svc.cluster.local
       steps:
       - setWeight: 20
       - pause:
@@ -22,28 +22,28 @@ spec:
       - setWeight: 50
       - pause:
           duration: "2m"
-      canaryService: demo-canary
-      stableService: demo
+      canaryService: istio-demo-canary
+      stableService: istio-demo
       trafficRouting:
         istio:
-           virtualService: 
+          virtualService:
             name: istio-vs
             routes:
             - primary # At least one route is required
-  replicas: 4
+  replicas: 2
   revisionHistoryLimit: 2
   selector:
     matchLabels:
-      app: demo
+      app: istio-demo
       version: blue
   template:
     metadata:
       labels:
-        app: demo
+        app: istio-demo
         version: blue
     spec:
       containers:
-      - name: demo
+      - name: istio-demo
         image: argoproj/rollouts-demo:blue
         imagePullPolicy: Always
         ports:
@@ -60,46 +60,23 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: demo
+  name: istio-demo
 spec:
   ports:
   - port: 80
     targetPort: 8080
   selector:
-    app: demo
+    app: istio-demo
   type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: demo-canary
+  name: istio-demo-canary
 spec:
   ports:
   - port: 80
     targetPort: 8080
   selector:
-    app: demo
+    app: istio-demo
   type: ClusterIP
----
-apiVersion: argoproj.io/v1alpha1
-kind: AnalysisTemplate
-metadata:
-  name: success-rate
-spec:
-  args:
-  - name: service-name
-  metrics:
-  - name: success-rate
-    successCondition: result[0] >= 0.95
-    interval: 30s
-    failureLimit: 1
-    provider:
-      prometheus:
-        address: http://prometheus.istio-system.svc.cluster.local:9090
-        query: |
-          sum(irate(
-            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code!~"5.*"}[1m]
-          )) / 
-          sum(irate(
-            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}"}[1m]
-          ))
