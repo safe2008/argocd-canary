@@ -14,7 +14,7 @@ spec:
         startingStep: 2
         args:
         - name: service-name
-          value: istio-demo-canary.demo.svc.cluster.local
+          value: istio-demo-canary.default.svc.cluster.local
       steps:
       - setWeight: 20
       - pause:
